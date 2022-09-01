@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PostStats } from '@prisma/client';
+import { Post, PostLike, PostStats } from '@prisma/client';
 import { AppErrorException } from 'src/common/exception/error.exception';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { generateId, slugify } from 'src/utils/slugify';
@@ -117,9 +117,10 @@ export class PostService {
     });
     if (!post) throw new AppErrorException('NotFound');
 
-    /** @todo 로그인 상태면 isLiked 보여주기 */
-
-    return post;
+    const postLikedMap = userId
+      ? await this.getPostLikedMap({ postIds: [post.id], userId })
+      : null;
+    return this.mergePostLiked(post, postLikedMap?.[post.id]);
   }
 
   async createPost(userId: string, { title, body }: CreatePostDto) {
@@ -163,8 +164,6 @@ export class PostService {
   }
 
   async likePost({ userId, postId }: PostActionParams): Promise<PostStats> {
-    await this.findPostById(postId);
-
     const alreadyLiked = await this.prisma.postLike.findUnique({
       where: { postId_userId: { postId, userId } },
     });
@@ -176,8 +175,6 @@ export class PostService {
   }
 
   async unlikePost({ userId, postId }: PostActionParams): Promise<PostStats> {
-    await this.findPostById(postId);
-
     const alreadyLiked = await this.prisma.postLike.findUnique({
       where: { postId_userId: { postId, userId } },
     });
@@ -201,9 +198,36 @@ export class PostService {
       },
     });
   }
+
+  private async getPostLikedMap({ postIds, userId }: GetPostLikedParams) {
+    const list = await this.prisma.postLike.findMany({
+      where: {
+        postId: {
+          in: postIds,
+        },
+        userId,
+      },
+    });
+    return list.reduce((acc, cur) => {
+      acc[cur.postId] = cur;
+      return acc;
+    }, {} as Record<string, PostLike>);
+  }
+
+  private mergePostLiked(post: Post, postLike?: PostLike) {
+    return {
+      ...post,
+      isLiked: !!postLike,
+    };
+  }
 }
 
 interface PostActionParams {
   userId: string;
   postId: string;
+}
+
+interface GetPostLikedParams {
+  userId: string;
+  postIds: string[];
 }
