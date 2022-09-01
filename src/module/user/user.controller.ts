@@ -1,7 +1,6 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Req } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { GetCurrentUserId } from 'src/common/decorators/get-current-user-id.decorator';
-import { UserResponseDto } from './dto/user-response';
+import { Request } from 'express';
 import { UserService } from './user.service';
 
 @Controller('/user')
@@ -10,9 +9,7 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get('/me')
-  async getCurrentUser(
-    @GetCurrentUserId() userId: string,
-  ): Promise<UserResponseDto> {
-    return await this.userService.findUserById(userId);
+  getCurrentUser(@Req() req: Request) {
+    return this.userService.getCurrentUser(req);
   }
 }

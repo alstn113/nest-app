@@ -13,7 +13,7 @@ export class AuthGuard implements CanActivate {
     if (isPublic) return true;
 
     const req = context.switchToHttp().getRequest();
-    if (!req.userId) throw new AppErrorException('Unauthorized');
+    if (!req.user) throw new AppErrorException('Unauthorized');
     return true;
   }
 }

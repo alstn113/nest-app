@@ -25,8 +25,8 @@ export class AuthService {
     const passwordMatches = await argon2.verify(user.password, dto.password);
     if (!passwordMatches) throw new AppErrorException('WrongCredentials');
     const [access_token, refresh_token] = await Promise.all([
-      this.getAccessToken(user.id),
-      this.getRefreshToken(user.id),
+      this.generateAccessToken(user.id, user.username),
+      this.generateRefreshToken(user.id, user.username),
     ]);
     await this.updateRtHash(user.id, refresh_token);
     this.setTokenCookie(res, { access_token, refresh_token });
@@ -76,19 +76,23 @@ export class AuthService {
     const diff = refreshTokenData.exp * 1000 - now;
     // refresh token이 15일보다 적게 남았을 경우 refresh token도 갱신
     if (diff < 1000 * 60 * 60 * 24 * 15) {
-      refresh_token = await this.getRefreshToken(user.id);
+      refresh_token = await this.generateAccessToken(user.id, user.username);
       await this.updateRtHash(user.id, refresh_token);
     }
-    const access_token = await this.getAccessToken(user.id);
+    const access_token = await this.generateRefreshToken(
+      user.id,
+      user.username,
+    );
     this.setTokenCookie(res, { access_token, refresh_token });
-    return user.id;
+    return { userId: user.id, username: user.username };
   }
 
-  async getAccessToken(userId: string) {
+  async generateAccessToken(userId: string, username: string) {
     const access_token = await this.jwtServcie.signAsync(
       {
         userId,
-        sub: 'access_token',
+        username,
+        type: 'access_token',
       },
       {
         secret: this.configServcie.get<string>('auth.access_token_secret'),
@@ -98,11 +102,12 @@ export class AuthService {
     return access_token;
   }
 
-  async getRefreshToken(userId: string) {
+  async generateRefreshToken(userId: string, username: string) {
     const refresh_token = await this.jwtServcie.signAsync(
       {
         userId,
-        sub: 'refresh_token',
+        username,
+        type: 'refresh_token',
       },
       {
         secret: this.configServcie.get<string>('auth.refresh_token_secret'),

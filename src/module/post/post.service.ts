@@ -15,6 +15,10 @@ export class PostService {
       where: {
         id: postId,
       },
+      include: {
+        user: true,
+        postStats: true,
+      },
     });
     if (!post) throw new AppErrorException('NotFound');
     return post;
