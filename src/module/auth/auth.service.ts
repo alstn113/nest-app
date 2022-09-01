@@ -24,8 +24,10 @@ export class AuthService {
     if (!user) throw new AppErrorException('WrongCredentials');
     const passwordMatches = await argon2.verify(user.password, dto.password);
     if (!passwordMatches) throw new AppErrorException('WrongCredentials');
-    const access_token = await this.getAccessToken(user.id);
-    const refresh_token = await this.getRefreshToken(user.id);
+    const [access_token, refresh_token] = await Promise.all([
+      this.getAccessToken(user.id),
+      this.getRefreshToken(user.id),
+    ]);
     await this.updateRtHash(user.id, refresh_token);
     this.setTokenCookie(res, { access_token, refresh_token });
   }
