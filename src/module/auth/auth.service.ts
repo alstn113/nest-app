@@ -129,10 +129,12 @@ export class AuthService {
     res.cookie('access_token', token.access_token, {
       maxAge: 1000 * 60 * 60 * 1, // 1h
       httpOnly: true,
+      path: '/',
     });
     res.cookie('refresh_token', token.refresh_token, {
       maxAge: 1000 * 60 * 60 * 24 * 30, // 30d
       httpOnly: true,
+      path: '/',
     });
   }
 
