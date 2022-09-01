@@ -82,19 +82,10 @@ export class CommentService {
       subCommentsMap.set(comment.parentCommentId, subComments);
     });
 
-    const groupedComments = rootComments.map((rootComment) => {
-      const subComments = subCommentsMap.get(rootComment.id) ?? [];
-      return {
-        ...rootComment,
-        subComments: subComments.map((subComment) => {
-          const subSubComments = subCommentsMap.get(subComment.id) ?? [];
-          return {
-            ...subComment,
-            subComments: subSubComments,
-          };
-        }),
-      };
-    });
+    const groupedComments = rootComments.map((rootComment) => ({
+      ...rootComment,
+      subComments: subCommentsMap.get(rootComment.id) ?? [],
+    }));
 
     return groupedComments;
   }
@@ -119,7 +110,8 @@ export class CommentService {
 
     if (parentComment) {
       comment.level = parentComment.level + 1;
-      if (comment.level >= 3) {
+      // 댓글과 대댓글까지만 가능
+      if (comment.level >= 2) {
         throw new AppErrorException('BadRequest');
       }
     }
