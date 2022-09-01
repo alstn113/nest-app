@@ -33,8 +33,11 @@ export class PostController {
 
   @Public()
   @Get('/:slug')
-  async getPostBySlug(@Param('slug') slug: string) {
-    return await this.postService.findPostBySlug(slug);
+  async getPostBySlug(
+    @Param('slug') slug: string,
+    @GetCurrentUserId() userId: string | null,
+  ) {
+    return await this.postService.findPostBySlug(slug, userId);
   }
 
   @Post('/')

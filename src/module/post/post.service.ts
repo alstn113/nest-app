@@ -100,7 +100,7 @@ export class PostService {
     });
   }
 
-  async findPostBySlug(slug: string) {
+  async findPostBySlug(slug: string, userId: string | null = null) {
     const post = await this.prisma.post.findUnique({
       where: {
         slug,
@@ -116,6 +116,9 @@ export class PostService {
       },
     });
     if (!post) throw new AppErrorException('NotFound');
+
+    /** @todo 로그인 상태면 isLiked 보여주기 */
+
     return post;
   }
 
