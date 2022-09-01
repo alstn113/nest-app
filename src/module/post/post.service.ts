@@ -24,33 +24,15 @@ export class PostService {
     return post;
   }
 
-  async findPostsByQuries({ cursor }: FindPostQueryDto) {
+  async findPostsByQuries({
+    cursor,
+    userId,
+  }: FindPostQueryDto & { userId?: string }) {
     const size = 20;
-    if (!cursor) {
-      const posts = await this.prisma.post.findMany({
-        take: size,
-        orderBy: {
-          createdAt: 'desc',
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              username: true,
-            },
-          },
-          postStats: true,
-        },
-      });
-      const nextCursor = posts[size - 1]?.id;
-      return { posts, nextCursor };
-    }
-    const posts = await this.prisma.post.findMany({
+    const list = await this.prisma.post.findMany({
       take: size,
       skip: 1,
-      cursor: {
-        id: cursor,
-      },
+      cursor: cursor ? { id: cursor } : undefined,
       orderBy: {
         createdAt: 'desc',
       },
@@ -64,9 +46,20 @@ export class PostService {
         postStats: true,
       },
     });
-    const nextCursor = posts[size - 1]?.id;
 
-    return { posts, nextCursor };
+    const postLikedMap = userId
+      ? await this.getPostLikedMap({
+          postIds: list.map((post) => post.id),
+          userId,
+        })
+      : null;
+    const listWithLiked = list.map((post) =>
+      this.mergePostLiked(post, postLikedMap?.[post.id]),
+    );
+
+    const nextCursor = listWithLiked[size - 1]?.id;
+
+    return { posts: listWithLiked, nextCursor };
   }
 
   async searchPosts(keyword: string) {
@@ -100,7 +93,7 @@ export class PostService {
     });
   }
 
-  async findPostBySlug(slug: string, userId: string | null = null) {
+  async findPostBySlug(slug: string, userId?: string) {
     const post = await this.prisma.post.findUnique({
       where: {
         slug,
