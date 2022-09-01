@@ -12,11 +12,7 @@ export class AuthMiddleware implements NestMiddleware {
     private readonly configService: ConfigService,
     private readonly authService: AuthService,
   ) {}
-  async use(
-    req: Request & { userId: string },
-    res: Response,
-    next: NextFunction,
-  ) {
+  async use(req: Request, res: Response, next: NextFunction) {
     const accessToken = req.cookies.access_token;
     const refreshToken = req.cookies.refresh_token;
     try {
@@ -39,5 +35,10 @@ export class AuthMiddleware implements NestMiddleware {
       } catch (e) {}
     }
     return next();
+  }
+}
+declare module 'Express' {
+  interface Request {
+    userId: string;
   }
 }
