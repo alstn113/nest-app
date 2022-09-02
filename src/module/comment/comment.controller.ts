@@ -16,7 +16,7 @@ export class CommentController {
     @Param('slug') slug: string,
     @GetCurrentUserId() userId: string,
   ) {
-    return await this.commentService.findComments(slug, userId);
+    return await this.commentService.findComments({ slug, userId });
   }
 
   @Public()

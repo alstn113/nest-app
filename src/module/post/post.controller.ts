@@ -37,7 +37,7 @@ export class PostController {
     @Param('slug') slug: string,
     @GetCurrentUserId() userId: string | null,
   ) {
-    return await this.postService.findPostBySlug(slug, userId);
+    return await this.postService.findPostBySlug({ slug, userId });
   }
 
   @Post('/')

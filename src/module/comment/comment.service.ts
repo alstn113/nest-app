@@ -8,7 +8,7 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 export class CommentService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findComments(slug: string, userId?: string) {
+  async findComments({ slug, userId = null }: GetCommentsParams) {
     const post = await this.prisma.post.findUnique({
       where: {
         slug,
@@ -67,15 +67,17 @@ export class CommentService {
 
   hideDeletedComments(comments: Comment[]) {
     return comments.map((comment) => {
-      if (!comment.deletedAt) return comment;
+      if (!comment.deletedAt) return { ...comment, isDeleted: false };
+      const someDate = new Date(0);
       return {
         ...comment,
         text: '',
         likes: 0,
         userId: null,
         user: { id: null, username: null },
-        createdAt: new Date(0),
-        updatedAt: new Date(0),
+        createdAt: someDate,
+        updatedAt: someDate,
+        isDeleted: true,
       };
     });
   }
@@ -250,6 +252,11 @@ export class CommentService {
       isLiked: !!commentLike,
     };
   }
+}
+
+interface GetCommentsParams {
+  slug: string;
+  userId?: string | null;
 }
 
 interface CommentActionParams {

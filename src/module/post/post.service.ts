@@ -31,8 +31,8 @@ export class PostService {
 
   async findPostsByQuries({
     cursor,
-    userId,
-  }: FindPostQueryDto & { userId?: string }) {
+    userId = null,
+  }: FindPostQueryDto & { userId?: string | null }) {
     const size = 20;
     const posts = await this.prisma.post.findMany({
       take: size,
@@ -98,7 +98,7 @@ export class PostService {
     });
   }
 
-  async findPostBySlug(slug: string, userId?: string) {
+  async findPostBySlug({ slug, userId = null }: GetPostParams) {
     const post = await this.prisma.post.findUnique({
       where: {
         slug,
@@ -219,7 +219,10 @@ export class PostService {
     };
   }
 }
-
+interface GetPostParams {
+  slug: string;
+  userId?: string | null;
+}
 interface PostActionParams {
   userId: string;
   postId: string;
