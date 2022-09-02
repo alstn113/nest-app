@@ -8,7 +8,7 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 export class CommentService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findComments(slug: string) {
+  async findComments(slug: string, userId?: string) {
     const post = await this.prisma.post.findUnique({
       where: {
         slug,
@@ -30,7 +30,18 @@ export class CommentService {
       },
     });
 
-    const filteredComments = this.hideDeletedComments(comments);
+    const commetLikedMap = userId
+      ? await this.getCommentLikeMap({
+          commentIds: comments.map((comment) => comment.id),
+          userId,
+        })
+      : null;
+
+    const commentsWithLiked = comments.map((comment) =>
+      this.mergeCommentLikeMap(comment, commetLikedMap?.[comment.id]),
+    );
+
+    const filteredComments = this.hideDeletedComments(commentsWithLiked);
     const groupedComments = this.groupSubComments(filteredComments);
 
     return groupedComments;
@@ -188,8 +199,6 @@ export class CommentService {
   }
 
   async likeComment({ userId, commentId }: CommentActionParams) {
-    await this.findComment(commentId);
-
     const alreadyLiked = await this.prisma.commentLike.findUnique({
       where: {
         commentId_userId: { commentId, userId },
@@ -204,8 +213,6 @@ export class CommentService {
   }
 
   async unlikeComment({ userId, commentId }: CommentActionParams) {
-    await this.findComment(commentId);
-
     const alreadyLiked = await this.prisma.commentLike.findUnique({
       where: {
         commentId_userId: { commentId, userId },

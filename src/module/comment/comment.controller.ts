@@ -12,8 +12,11 @@ export class CommentController {
 
   @Public()
   @Get('/post/:slug')
-  async getComments(@Param('slug') slug: string) {
-    return await this.commentService.findComments(slug);
+  async getComments(
+    @Param('slug') slug: string,
+    @GetCurrentUserId() userId: string,
+  ) {
+    return await this.commentService.findComments(slug, userId);
   }
 
   @Public()

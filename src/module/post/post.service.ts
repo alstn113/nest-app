@@ -16,7 +16,12 @@ export class PostService {
         id: postId,
       },
       include: {
-        user: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
         postStats: true,
       },
     });
@@ -29,7 +34,7 @@ export class PostService {
     userId,
   }: FindPostQueryDto & { userId?: string }) {
     const size = 20;
-    const list = await this.prisma.post.findMany({
+    const posts = await this.prisma.post.findMany({
       take: size,
       skip: 1,
       cursor: cursor ? { id: cursor } : undefined,
@@ -49,17 +54,17 @@ export class PostService {
 
     const postLikedMap = userId
       ? await this.getPostLikedMap({
-          postIds: list.map((post) => post.id),
+          postIds: posts.map((post) => post.id),
           userId,
         })
       : null;
-    const listWithLiked = list.map((post) =>
+    const postsWithLiked = posts.map((post) =>
       this.mergePostLiked(post, postLikedMap?.[post.id]),
     );
 
-    const nextCursor = listWithLiked[size - 1]?.id;
+    const nextCursor = postsWithLiked[size - 1]?.id;
 
-    return { posts: listWithLiked, nextCursor };
+    return { posts: postsWithLiked, nextCursor };
   }
 
   async searchPosts(keyword: string) {
