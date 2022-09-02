@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Comment, Prisma } from '@prisma/client';
+import { Comment, CommentLike, Prisma } from '@prisma/client';
 import { AppErrorException } from 'src/common/exception/error.exception';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -220,9 +220,37 @@ export class CommentService {
     const commentLikes = await this.updateCommentLikes(commentId);
     return commentLikes;
   }
+
+  private async getCommentLikeMap({
+    commentIds,
+    userId,
+  }: GetCommentLikedParams) {
+    const list = await this.prisma.commentLike.findMany({
+      where: {
+        commentId: { in: commentIds },
+        userId,
+      },
+    });
+    return list.reduce((acc, cur) => {
+      acc[cur.commentId] = cur;
+      return acc;
+    }, {} as Record<string, CommentLike>);
+  }
+
+  private mergeCommentLikeMap(comment: Comment, commentLike?: CommentLike) {
+    return {
+      ...comment,
+      isLiked: !!commentLike,
+    };
+  }
 }
 
 interface CommentActionParams {
   userId: string;
   commentId: string;
+}
+
+interface GetCommentLikedParams {
+  userId: string;
+  commentIds: string[];
 }
