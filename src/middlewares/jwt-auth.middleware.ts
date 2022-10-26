@@ -48,11 +48,3 @@ export class AuthMiddleware implements NestMiddleware {
     return next();
   }
 }
-declare module 'Express' {
-  interface Request {
-    user: {
-      id: string;
-      username: string;
-    } | null;
-  }
-}
